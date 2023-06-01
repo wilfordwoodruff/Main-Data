@@ -29,14 +29,14 @@ jobs:
     - name: Delete old data
       run: rm -f data/raw/*.csv
     - name: Run script
-      run: python script/load_data.py --api_key ${{ secrets.WOODRUFF_AUTHORIZATION_HEADER }}
+      run: python scripts/load_data.py --api_key ${{ secrets.WOODRUFF_AUTHORIZATION_HEADER }}
     - name: Run derived data tests
       run: python -m unittest test_derived_data.py
       working-directory: test/
       env:
         PYTHONPATH: ../scripts
     - name: Clean the data
-      run: python script/derived_data.py
+      run: python scripts/derived_data.py
     - name: Commit and push changes
       run: |
         git config --global user.name 'github-actions[bot]'
