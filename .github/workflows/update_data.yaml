@@ -24,6 +24,8 @@ jobs:
     - name: Run Test Update Raw Data
       run: python -m unittest test_raw_data.py # Add this line to run the test
       working-directory: test/
+      env:
+        PYTHONPATH: ../scripts
     - name: Delete old data
       run: rm -f data/raw/*.csv
     - name: Run script
@@ -31,6 +33,8 @@ jobs:
     - name: Run derived data tests
       run: python -m unittest test_derived_data.py
       working-directory: test/
+      env:
+        PYTHONPATH: ../scripts
     - name: Clean the data
       run: python script/derived_data.py
     - name: Commit and push changes
