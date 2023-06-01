@@ -1,0 +1,44 @@
+name: Update Data
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # This runs the action every Monday at midnight
+  workflow_dispatch:  # This allows the action to be run manually from the Actions tab
+
+jobs:
+  update_data:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.TYLER_PAT }}  # Use your PAT instead of GITHUB_TOKEN for checkout
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.11
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Run Test Update Raw Data
+      run: python -m unittest test_raw_data.py # Add this line to run the test
+      working-directory: code/test/
+    - name: Delete old data
+      run: rm -f data/raw/*.csv
+    - name: Run script
+      run: python code/pipe/load_data.py --api_key ${{ secrets.WOODRUFF_AUTHORIZATION_HEADER }}
+    - name: Run derived data tests
+      run: python -m unittest test_derived_data.py
+      working-directory: code/test/
+    - name: Clean the data
+      run: python code/pipe/derived_data.py
+    - name: Commit and push changes
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+        git add -A
+        git commit -m "Automated data update" || exit 0  # Exit gracefully if there is nothing to commit
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.TYLER_PAT }}  # Use your PAT for the push operation
