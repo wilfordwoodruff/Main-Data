@@ -23,16 +23,16 @@ jobs:
         pip install -r requirements.txt
     - name: Run Test Update Raw Data
       run: python -m unittest test_raw_data.py # Add this line to run the test
-      working-directory: code/test/
+      working-directory: test/
     - name: Delete old data
       run: rm -f data/raw/*.csv
     - name: Run script
-      run: python code/pipe/load_data.py --api_key ${{ secrets.WOODRUFF_AUTHORIZATION_HEADER }}
+      run: python script/load_data.py --api_key ${{ secrets.WOODRUFF_AUTHORIZATION_HEADER }}
     - name: Run derived data tests
       run: python -m unittest test_derived_data.py
-      working-directory: code/test/
+      working-directory: test/
     - name: Clean the data
-      run: python code/pipe/derived_data.py
+      run: python script/derived_data.py
     - name: Commit and push changes
       run: |
         git config --global user.name 'github-actions[bot]'
