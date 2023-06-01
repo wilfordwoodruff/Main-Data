@@ -5,7 +5,7 @@ from unittest.mock import patch, mock_open
 import requests
 
 # Get the absolute path to the directory containing load_data.py
-load_data_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), 'test')
+load_data_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), 'script')
 sys.path.insert(0, load_data_directory)
 
 from load_data import get_data
