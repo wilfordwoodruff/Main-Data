@@ -120,6 +120,7 @@ server <- function(input, output) {
       write_sheet(data=user_filters$stories,
                   ss=url,sheet='Main')
       user_filters$submit = user_filters$submit + 1
+      stories <<- user_filters$stories
     }
     
     #If a pre-made filter gets chosen, update the sliders and check boxes
