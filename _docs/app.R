@@ -3,6 +3,9 @@ library(googlesheets4)
 library(googledrive)
 library(tidyverse)
 library(DT)
+library(sf)
+library(leaflet)
+library(leaflet.extras2)
 
 
 writings <- read_csv('https://raw.githubusercontent.com/wilfordwoodruff/Main-Data/main/data/derived/derived_data.csv') %>%
@@ -21,6 +24,9 @@ get_sheet <- function() {
 }
 #get_sheet()
 stories <- get_sheet() 
+
+clara_compiled <- read_csv('https://raw.githubusercontent.com/wilfordwoodruff/clara_woodruff_timeline_map/main/data/final_data.csv')
+clara_compiled$point <- st_geometry(st_as_sf(clara_compiled,coords = c("lng","lat")))
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -55,7 +61,7 @@ ui <- fluidPage(
             ),
             textInput(inputId='word_search',
                       label='Search for a Word',
-                      value= "test"),
+                      placeholder= "eg. Utah"),
             br(),
             textInput(inputId='submit_name',
                       label='Name Your Discovery!'),
@@ -63,19 +69,23 @@ ui <- fluidPage(
                       label='Describe What You Found',
                       width='400px',height='100px'),
             actionButton(inputId="saveStory",
-                         label="Save Your Story")
+                         label="Save Your Story"),
+            bookmarkButton()
         ),
         
 
         # Show a plot of the generated distribution
         mainPanel(
-#          tabsetPanel(
-            #tabPanel("See Dataset",
-             tableOutput("fiverows")#,plotOutput("distplot")
-            #),
-           )
+          tabsetPanel(
+            tabPanel("See Dataset",
+             tableOutput("fiverows")
+            ),
+            tabPanel("See Graphs",
+                     leafletOutput("claramap")
+            ) 
+          )
         )
-    
+    )
 )
 
 server <- function(input, output) {
@@ -134,16 +144,57 @@ server <- function(input, output) {
     updateTextAreaInput(inputId = "chosen_description",
                         value = user_filters$description)
     
-  })
-  output$fiverows <- renderTable({
-    writings %>%
+    user_filters$filtered_writing <- writings %>%
       mutate(`Word Count`=str_count(`Text Only Transcript`,user_filters$wordsearch)) %>%
       filter(`Word Count` > 0 & `Document Type` %in% user_filters$journaltype &
-               `First Date` > user_filters$startdate & `First Date` < user_filters$enddate) %>%
-      select(`Document Type`,`Text Only Transcript`,Places,Dates,`Word Count`) %>%
-            #add date filter
-      head()
+               `First Date` > user_filters$startdate & `First Date` < user_filters$enddate)
+    
+    user_filters$map_data <- clara_compiled %>%
+      filter(short_url %in% user_filters$filtered_writing$`Short URL`) %>%
+      group_by(lat,lng) %>%
+      summarise(url=first(search_url),
+                count= n(),
+                city=first(city),
+                day=first(day),
+                state=first(state_name))
+      #add date filter
+    user_filters$max_map_count <- max(user_filters$map_data$count)
+    
+    #Avoid a 
+    if(user_filters$max_map_count < 24) {
+      user_filters$map_bins <- c(1,2,4,8,23)
+    }
+    else if (user_filters$max_map_count < 100) {
+      user_filters$map_bins <- c(1,2,5,10,50,99)
+    }
+    else {
+    user_filters$map_bins <- c(1, 2, round(user_filters$max_map_count/8,0), 
+                               round(user_filters$max_map_count/4,0), 
+                               round(user_filters$max_map_count/2,0), user_filters$max_map_count)
+    }
+    user_filters$map_palette <- colorBin(palette="YlGnBu", domain=user_filters$map_data$count,
+                                         na.color="transparent", bins=user_filters$map_bins)
+    
+  })
+  output$fiverows <- renderTable({
+      head(user_filters$filtered_writing)
     })
+  output$claramap <- renderLeaflet({
+    # creating leaflet graph
+    leaflet() %>%
+      addProviderTiles('CartoDB.Positron') %>%
+      setView(-98.5795, 39.8283, zoom = 3) %>%
+      addCircles(data=user_filters$map_data, 
+                 lng = user_filters$map_data$lng, 
+                 lat = user_filters$map_data$lat, 
+                 color = ~user_filters$map_palette(user_filters$map_data$count), 
+                 popup = ~paste("<b>", "<a href=", user_filters$map_data$url, ">", user_filters$map_data$city, 
+                                "</a>", ",", "</b>", user_filters$map_data$state, "<br>Number of Mentions:",
+                                user_filters$map_data$count)) %>%
+      addLegend(data=user_filters$map_data, pal=user_filters$map_palette, values=user_filters$map_data$count, opacity=0.9, title = "Mentions", 
+                position = "bottomleft")
+    
+  })
   
   #Plots--------------------
 '  output$sentiment_graph <- renderGraph({
@@ -180,5 +231,5 @@ output$distPlot <- renderPlot({
 })
 "
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server,enableBookmarking = "url")
 
