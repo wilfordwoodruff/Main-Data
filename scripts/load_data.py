@@ -4,7 +4,7 @@ import re
 import argparse
 import sys
 
-def get_data(url, api_key, directory):
+def get_data(url, api_key, directory, name):
     headers = {
         "Authorization": f"Bearer 2|{api_key}"
     }
@@ -18,9 +18,9 @@ def get_data(url, api_key, directory):
             if match:
                 filename = match.group(1)
             else:
-                filename = "pages-export.csv"
+                filename = f"{name}-export.csv"
         else:
-            filename = "pages-export.csv"
+            filename = f"{name}-export.csv"
 
         # Check if the directory exists, if not, create it
         if not os.path.exists(directory):
@@ -44,6 +44,9 @@ if __name__ == '__main__':
         print("Error: No API key provided. Please set the API_KEY environment variable or use the --api_key argument.")
         exit(1)
 
-    url = 'https://wilfordwoodruffpapers.org/api/v1/pages/export'
+    url_1 = 'https://wilfordwoodruffpapers.org/api/v1/pages/export'
+    url_2 = 'https://wilfordwoodruffpapers.org/api/v1/places/export'
     directory = "data/raw"  # Directory to save the data
-    get_data(url, api_key, directory)
+
+    get_data(url_1, api_key, directory, 'pages')
+    get_data(url_2, api_key, directory, 'locations')
