@@ -3,7 +3,7 @@ import glob
 import pandas as pd
 
 def clean_data(directory, output_directory):
-    filename_pattern = os.path.join(directory, '*.csv')
+    filename_pattern = os.path.join(directory, '*pages-export.csv')
     output_filename = 'derived_data.csv'
 
     # Find all CSV files in the directory
