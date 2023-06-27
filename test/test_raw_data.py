@@ -27,7 +27,7 @@ class TestGetData(unittest.TestCase):
 
         # Call function
         with patch("builtins.open", mock_open()) as mock_file:
-            get_data(url, api_key, directory)
+            get_data(url, api_key, directory, 'pages')
 
         # Asserts
         mock_get.assert_called_once_with(url, headers={"Authorization": f"Bearer 2|{api_key}"})
@@ -46,7 +46,7 @@ class TestGetData(unittest.TestCase):
 
         # Call function
         with self.assertRaises(SystemExit) as cm:
-            get_data(url, api_key, directory)
+            get_data(url, api_key, directory,'pages')
 
         # Asserts
         mock_get.assert_called_once_with(url, headers={"Authorization": f"Bearer 2|{api_key}"})
